@@ -5,22 +5,10 @@ Para o banco de dados, seguem os temas:
 
 - Logística (semestre passado)
 
-
-- Lanchonete
-              (mesma coisa os dois ou não?)
-- Restaurante
-
-
-- Loja (qualquer tipo de loja)
-
-- Faculdade
-
-- Banco? (perguntar para o anjoletto)
+- Banco
 
 - Shopping
 
-- Depósito
-
 supabase (relacional)
 
-cassandra, mongoDB, neo4j (não-relacional)
+mongoDB, neo4j (não-relacional)
