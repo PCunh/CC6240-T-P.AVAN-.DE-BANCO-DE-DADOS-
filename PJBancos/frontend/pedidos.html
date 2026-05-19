@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Pedidos</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav>
+    <h1>Logística Inteligente</h1>
+    <a href="index.html">Início</a>
+    <a href="empresas.html">Empresas</a>
+    <a href="motoristas.html">Motoristas</a>
+    <a href="usuarios.html">Usuários</a>
+    <a href="pedidos.html">Pedidos</a>
+    <a href="rotas.html">Rotas</a>
+</nav>
+
+<div class="container">
+    <h2>Pedidos</h2>
+
+    <div class="card">
+        <h3>Novo Pedido</h3>
+        <input id="origem" placeholder="Cidade de origem">
+        <input id="destino" placeholder="Cidade de destino">
+        <select id="motorista_id">
+            <option value="">Selecione o motorista</option>
+        </select>
+        <select id="empresa_id">
+            <option value="">Selecione a empresa</option>
+        </select>
+        <input id="produto" placeholder="Produto">
+        <input id="peso" placeholder="Peso (kg)" type="number">
+        <button onclick="criar()">Criar Pedido</button>
+    </div>
+
+    <div class="card">
+        <h3>Pedidos</h3>
+        <table>
+            <thead>
+            <tr><th>Origem</th><th>Destino</th><th>Status</th><th>Eventos</th><th></th></tr>
+            </thead>
+            <tbody id="tabela"></tbody>
+        </table>
+    </div>
+
+    <div class="card" id="card-eventos" style="display:none">
+        <h3>Adicionar Evento</h3>
+        <input id="ev-pedido-id" readonly placeholder="ID do pedido">
+        <select id="ev-status">
+            <option value="coletado">Coletado</option>
+            <option value="em_transito">Em trânsito</option>
+            <option value="entregue">Entregue</option>
+            <option value="problema">Problema</option>
+        </select>
+        <input id="ev-localizacao" placeholder="Localização atual">
+        <input id="ev-observacao" placeholder="Observação (opcional)">
+        <button onclick="adicionarEvento()">Registrar Evento</button>
+    </div>
+
+    <div class="card" id="card-lista-eventos" style="display:none">
+        <h3>Histórico de Eventos</h3>
+        <table>
+            <thead>
+            <tr><th>Status</th><th>Localização</th><th>Observação</th><th>Data/Hora</th></tr>
+            </thead>
+            <tbody id="tabela-eventos"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const API = "http://127.0.0.1:8000";
+
+    async function carregarSelects() {
+        const [motRes, empRes] = await Promise.all([
+            fetch(`${API}/motoristas`),
+            fetch(`${API}/empresas`)
+        ]);
+        const motoristas = await motRes.json();
+        const empresas = await empRes.json();
+
+        const selMot = document.getElementById("motorista_id");
+        motoristas.forEach(m => {
+            const opt = document.createElement("option");
+            opt.value = m.id;
+            opt.textContent = m.nome;
+            selMot.appendChild(opt);
+        });
+
+        const selEmp = document.getElementById("empresa_id");
+        empresas.forEach(e => {
+            const opt = document.createElement("option");
+            opt.value = e.id;
+            opt.textContent = e.nome;
+            selEmp.appendChild(opt);
+        });
+    }
+
+    async function listar() {
+        const res = await fetch(`${API}/pedidos`);
+        const data = await res.json();
+        const tbody = document.getElementById("tabela");
+        tbody.innerHTML = data.map(p => `<tr>
+                <td>${p.origem}</td>
+                <td>${p.destino}</td>
+                <td>${p.status}</td>
+                <td><button onclick="selecionarPedido('${p._id}')">+ Evento</button></td>
+                <td><button onclick="verEventos('${p._id}')">Ver Eventos</button></td>
+                <td><button class="btn-delete" onclick="deletar('${p._id}')">Excluir</button></td>
+            </tr>
+        `).join("");
+    }
+
+    async function criar() {
+        const body = {
+            origem: document.getElementById("origem").value,
+            destino: document.getElementById("destino").value,
+            motorista_id: document.getElementById("motorista_id").value,
+            empresa_id: document.getElementById("empresa_id").value,
+            itens: [{
+                produto: document.getElementById("produto").value,
+                peso: parseFloat(document.getElementById("peso").value)
+            }]
+        };
+        await fetch(`${API}/pedidos`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(body)
+        });
+        listar();
+    }
+
+    async function deletar(id) {
+        await fetch(`${API}/pedidos/${id}`, { method: "DELETE" });
+        listar();
+    }
+
+    function selecionarPedido(id) {
+        document.getElementById("ev-pedido-id").value = id;
+        document.getElementById("card-eventos").style.display = "block";
+        document.getElementById("card-eventos").scrollIntoView({ behavior: "smooth" });
+    }
+
+    async function adicionarEvento() {
+        const id = document.getElementById("ev-pedido-id").value;
+        const body = {
+            status: document.getElementById("ev-status").value,
+            localizacao: document.getElementById("ev-localizacao").value,
+            observacao: document.getElementById("ev-observacao").value
+        };
+        await fetch(`${API}/pedidos/${id}/eventos`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(body)
+        });
+        alert("Evento registrado!");
+        listar();
+    }
+
+    async function verEventos(id) {
+        const res = await fetch(`${API}/pedidos/${id}/eventos`);
+        const data = await res.json();
+        const tbody = document.getElementById("tabela-eventos");
+        tbody.innerHTML = data.length === 0
+            ? '<tr><td colspan="4">Nenhum evento registrado.</td></tr>'
+            : data.map(e => `
+            <tr>
+                <td>${e.status}</td>
+                <td>${e.localizacao}</td>
+                <td>${e.observacao || "-"}</td>
+                <td>${e.timestamp}</td>
+            </tr>
+        `).join("");
+        document.getElementById("card-lista-eventos").style.display = "block";
+        document.getElementById("card-lista-eventos").scrollIntoView({ behavior: "smooth" });
+    }
+
+    carregarSelects();
+    listar();
+</script>
+</body>
+</html>

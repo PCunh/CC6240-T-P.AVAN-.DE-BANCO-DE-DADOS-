@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Rotas</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav>
+    <h1>Logística Inteligente</h1>
+    <a href="index.html">Início</a>
+    <a href="empresas.html">Empresas</a>
+    <a href="motoristas.html">Motoristas</a>
+    <a href="usuarios.html">Usuários</a>
+    <a href="pedidos.html">Pedidos</a>
+    <a href="rotas.html">Rotas</a>
+</nav>
+
+<div class="container">
+    <h2>Rotas</h2>
+
+    <div class="card">
+        <h3>Nova Cidade</h3>
+        <input id="cidade-nome" placeholder="Nome da cidade">
+        <input id="cidade-estado" placeholder="Estado (ex: SP)">
+        <button onclick="criarCidade()">Cadastrar Cidade</button>
+    </div>
+
+    <div class="card">
+        <h3>Nova Rota</h3>
+        <select id="rota-origem">
+            <option value="">Origem</option>
+        </select>
+        <select id="rota-destino">
+            <option value="">Destino</option>
+        </select>
+        <input id="rota-distancia" placeholder="Distância (km)" type="number">
+        <input id="rota-tempo" placeholder="Tempo (minutos)" type="number">
+        <input id="rota-custo" placeholder="Custo (R$)" type="number" step="0.01">
+        <button onclick="criarRota()">Cadastrar Rota</button>
+    </div>
+
+    <div class="card">
+        <h3>Menor Caminho</h3>
+        <select id="mc-origem">
+            <option value="">Origem</option>
+        </select>
+        <select id="mc-destino">
+            <option value="">Destino</option>
+        </select>
+        <button onclick="calcularMenorCaminho()">Calcular</button>
+        <div id="resultado-mc" style="margin-top:16px; font-size:14px;"></div>
+    </div>
+
+    <div class="card">
+        <h3>Cidades Cadastradas</h3>
+        <table>
+            <thead>
+            <tr><th>Cidade</th><th>Estado</th><th></th></tr>
+            </thead>
+            <tbody id="tabela-cidades"></tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h3>Rotas Cadastradas</h3>
+        <table>
+            <thead>
+            <tr><th>Origem</th><th>Destino</th><th>Distância</th><th>Tempo</th><th>Custo</th><th></th></tr>
+            </thead>
+            <tbody id="tabela-rotas"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const API = "http://127.0.0.1:8000";
+
+    async function carregarCidades() {
+        const res = await fetch(`${API}/cidades`);
+        const data = await res.json();
+
+        const selects = ["rota-origem", "rota-destino", "mc-origem", "mc-destino"];
+        selects.forEach(id => {
+            const sel = document.getElementById(id);
+            const val = sel.value;
+            sel.innerHTML = '<option value="">Selecione</option>';
+            data.forEach(c => {
+                const opt = document.createElement("option");
+                opt.value = c.nome;
+                opt.textContent = `${c.nome} - ${c.estado}`;
+                sel.appendChild(opt);
+            });
+            sel.value = val;
+        });
+
+        const tbody = document.getElementById("tabela-cidades");
+        tbody.innerHTML = data.map(c => `
+                <tr>
+                    <td>${c.nome}</td>
+                    <td>${c.estado}</td>
+                    <td><button class="btn-delete" onclick="deletarCidade('${c.nome}')">Excluir</button></td>
+                </tr>
+            `).join("");
+    }
+
+    async function listarRotas() {
+        const res = await fetch(`${API}/rotas`);
+        const data = await res.json();
+        const tbody = document.getElementById("tabela-rotas");
+        tbody.innerHTML = data.map(r => `
+                <tr>
+                    <td>${r.origem}</td>
+                    <td>${r.destino}</td>
+                    <td>${r.distancia} km</td>
+                    <td>${r.tempo} min</td>
+                    <td>R$ ${r.custo.toFixed(2)}</td>
+                    <td><button class="btn-delete" onclick="deletarRota('${r.origem}', '${r.destino}')">Excluir</button></td>
+                </tr>
+            `).join("");
+    }
+
+    async function criarCidade() {
+        const body = {
+            nome: document.getElementById("cidade-nome").value,
+            estado: document.getElementById("cidade-estado").value
+        };
+        await fetch(`${API}/cidades`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(body)
+        });
+        carregarCidades();
+    }
+
+    async function criarRota() {
+        const body = {
+            origem: document.getElementById("rota-origem").value,
+            destino: document.getElementById("rota-destino").value,
+            distancia: parseInt(document.getElementById("rota-distancia").value),
+            tempo: parseInt(document.getElementById("rota-tempo").value),
+            custo: parseFloat(document.getElementById("rota-custo").value)
+        };
+        await fetch(`${API}/rotas`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(body)
+        });
+        listarRotas();
+    }
+
+    async function deletarCidade(nome) {
+        await fetch(`${API}/cidades/${encodeURIComponent(nome)}`, { method: "DELETE" });
+        carregarCidades();
+        listarRotas();
+    }
+
+    async function deletarRota(origem, destino) {
+        await fetch(`${API}/rotas/${encodeURIComponent(origem)}/${encodeURIComponent(destino)}`, { method: "DELETE" });
+        listarRotas();
+    }
+
+    async function calcularMenorCaminho() {
+        const origem = document.getElementById("mc-origem").value;
+        const destino = document.getElementById("mc-destino").value;
+        const res = await fetch(`${API}/rotas/menor-caminho?origem=${encodeURIComponent(origem)}&destino=${encodeURIComponent(destino)}`);
+        const div = document.getElementById("resultado-mc");
+        if (res.ok) {
+            const data = await res.json();
+            div.innerHTML = `<strong>Caminho:</strong> ${data.caminho.join(" → ")}<br>
+                    <strong>Distância total:</strong> ${data.distancia_total} km`;
+        } else {
+            div.innerHTML = "<span style='color:red'>Caminho não encontrado.</span>";
+        }
+    }
+
+    carregarCidades();
+    listarRotas();
+</script>
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Motoristas</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav>
+    <h1>Logística Inteligente</h1>
+    <a href="index.html">Início</a>
+    <a href="empresas.html">Empresas</a>
+    <a href="motoristas.html">Motoristas</a>
+    <a href="usuarios.html">Usuários</a>
+    <a href="pedidos.html">Pedidos</a>
+    <a href="rotas.html">Rotas</a>
+</nav>
+
+<div class="container">
+    <h2>Motoristas</h2>
+
+    <div class="card">
+        <h3>Novo Motorista</h3>
+        <input id="nome" placeholder="Nome">
+        <input id="cnh" placeholder="CNH">
+        <select id="empresa_id">
+            <option value="">Selecione a empresa</option>
+        </select>
+        <button onclick="criar()">Cadastrar</button>
+    </div>
+
+    <div class="card">
+        <h3>Motoristas Cadastrados</h3>
+        <table>
+            <thead>
+            <tr><th>Nome</th><th>CNH</th><th>Empresa</th><th></th></tr>
+            </thead>
+            <tbody id="tabela"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const API = "http://127.0.0.1:8000";
+
+    async function carregarEmpresas() {
+        const res = await fetch(`${API}/empresas`);
+        const data = await res.json();
+        const select = document.getElementById("empresa_id");
+        data.forEach(e => {
+            const opt = document.createElement("option");
+            opt.value = e.id;
+            opt.textContent = e.nome;
+            select.appendChild(opt);
+        });
+        return data;
+    }
+
+    async function listar() {
+        const [motRes, empRes] = await Promise.all([
+            fetch(`${API}/motoristas`),
+            fetch(`${API}/empresas`)
+        ]);
+        const motoristas = await motRes.json();
+        const empresas = await empRes.json();
+        const empMap = Object.fromEntries(empresas.map(e => [e.id, e.nome]));
+
+        const tbody = document.getElementById("tabela");
+        tbody.innerHTML = motoristas.map(m => `
+                <tr>
+                    <td>${m.nome}</td>
+                    <td>${m.cnh}</td>
+                    <td>${empMap[m.empresa_id] || "-"}</td>
+                    <td><button class="btn-delete" onclick="deletar('${m.id}')">Excluir</button></td>
+                </tr>
+            `).join("");
+    }
+
+    async function criar() {
+        const body = {
+            nome: document.getElementById("nome").value,
+            cnh: document.getElementById("cnh").value,
+            empresa_id: document.getElementById("empresa_id").value
+        };
+        await fetch(`${API}/motoristas`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(body)
+        });
+        listar();
+    }
+
+    async function deletar(id) {
+        await fetch(`${API}/motoristas/${id}`, { method: "DELETE" });
+        listar();
+    }
+
+    carregarEmpresas();
+    listar();
+</script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Empresas</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav>
+    <h1>Logística Inteligente</h1>
+    <a href="index.html">Início</a>
+    <a href="empresas.html">Empresas</a>
+    <a href="motoristas.html">Motoristas</a>
+    <a href="usuarios.html">Usuários</a>
+    <a href="pedidos.html">Pedidos</a>
+    <a href="rotas.html">Rotas</a>
+</nav>
+
+<div class="container">
+    <h2>Empresas</h2>
+
+    <div class="card">
+        <h3>Nova Empresa</h3>
+        <input id="nome" placeholder="Nome da empresa">
+        <input id="cnpj" placeholder="CNPJ">
+        <input id="endereco" placeholder="Endereço">
+        <button onclick="criar()">Cadastrar</button>
+    </div>
+
+    <div class="card">
+        <h3>Empresas Cadastradas</h3>
+        <table>
+            <thead>
+            <tr><th>Nome</th><th>CNPJ</th><th>Endereço</th><th></th></tr>
+            </thead>
+            <tbody id="tabela"></tbody>
+        </table>
+    </div>
+
+</div>
+
+<script>
+    const API = "http://127.0.0.1:8000";
+
+    async function listar() {
+        const res = await fetch(`${API}/empresas`);
+        const data = await res.json();
+        const tbody = document.getElementById("tabela");
+        tbody.innerHTML = data.map(e => `
+                <tr>
+                    <td>${e.nome}</td>
+                    <td>${e.cnpj}</td>
+                    <td>${e.endereco}</td>
+                    <td><button class="btn-delete" onclick="deletar('${e.id}')">Excluir</button></td>
+                </tr>
+            `).join("");
+    }
+
+    async function criar() {
+        const body = {
+            nome: document.getElementById("nome").value,
+            cnpj: document.getElementById("cnpj").value,
+            endereco: document.getElementById("endereco").value
+        };
+        await fetch(`${API}/empresas`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(body)
+        });
+        listar();
+    }
+
+    async function deletar(id) {
+        await fetch(`${API}/empresas/${id}`, { method: "DELETE" });
+        listar();
+    }
+
+    listar();
+</script>
+</body>
+</html>

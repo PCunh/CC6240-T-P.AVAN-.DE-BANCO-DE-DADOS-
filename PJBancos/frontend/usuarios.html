@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Usuários</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav>
+    <h1>Logística Inteligente</h1>
+    <a href="index.html">Início</a>
+    <a href="empresas.html">Empresas</a>
+    <a href="motoristas.html">Motoristas</a>
+    <a href="usuarios.html">Usuários</a>
+    <a href="pedidos.html">Pedidos</a>
+    <a href="rotas.html">Rotas</a>
+</nav>
+
+<div class="container">
+    <h2>Usuários</h2>
+
+    <div class="card">
+        <h3>Novo Usuário</h3>
+        <input id="email" placeholder="Email">
+        <select id="role">
+            <option value="user">Usuário</option>
+            <option value="admin">Admin</option>
+            <option value="motorista">Motorista</option>
+        </select>
+        <button onclick="criar()">Cadastrar</button>
+    </div>
+
+    <div class="card">
+        <h3>Usuários Cadastrados</h3>
+        <table>
+            <thead>
+            <tr><th>Email</th><th>Role</th><th></th></tr>
+            </thead>
+            <tbody id="tabela"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const API = "http://127.0.0.1:8000";
+
+    async function listar() {
+        const res = await fetch(`${API}/usuarios`);
+        const data = await res.json();
+        const tbody = document.getElementById("tabela");
+        tbody.innerHTML = data.map(u => `
+                <tr>
+                    <td>${u.email}</td>
+                    <td>${u.role}</td>
+                    <td><button class="btn-delete" onclick="deletar('${u.id}')">Excluir</button></td>
+                </tr>
+            `).join("");
+    }
+
+    async function criar() {
+        const body = {
+            email: document.getElementById("email").value,
+            role: document.getElementById("role").value
+        };
+        await fetch(`${API}/usuarios`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(body)
+        });
+        listar();
+    }
+
+    async function deletar(id) {
+        await fetch(`${API}/usuarios/${id}`, { method: "DELETE" });
+        listar();
+    }
+
+    listar();
+</script>
+</body>
+</html>
