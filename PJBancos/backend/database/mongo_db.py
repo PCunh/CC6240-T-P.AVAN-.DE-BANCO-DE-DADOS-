@@ -1,7 +1,7 @@
 from pymongo import MongoClient
 from bson import ObjectId
 
-MONGO_URI = "mongodb+srv://unifcfonseca_db_user:UH43jqZLTMsiz2dX@pj-tpa-banco-de-dados.oqjdivy.mongodb.net/?appName=PJ-TPA-BANCO-DE-DADOS"
+MONGO_URI = "mongodb+srv://:@.mongodb.net/"
 
 client = MongoClient(MONGO_URI)
 db = client["logistica"]
