@@ -64,9 +64,6 @@ bash
 cd PJBancos/backend
 uvicorn Main:app --reload
 
-O backend estará disponível em http://127.0.0.1:8000.
-A documentação interativa dos endpoints estará em http://127.0.0.1:8000/docs.
-
 ### Executar o frontend
 
 Abra o arquivo PJBancos/frontend/index.html diretamente no navegador.
