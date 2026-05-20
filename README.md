@@ -26,4 +26,47 @@ neo4j (não-relacional)
   - cálculo de rotas
   - conexões entre cidades
   - análise logística
-  - menor caminho 
+  - menor caminho
+
+# RELATÓRIO SOBRE O PROJETO
+### Os requisitos para rodar o projeto são:
+- Python 3.10+
+- Conta no [Supabase](https://supabase.com)
+- Conta no [MongoDB Atlas](https://cloud.mongodb.com)
+- Conta no [Neo4j AuraDB](https://console.neo4j.io)
+
+### instalação:
+bash
+pip install fastapi uvicorn "supabase==2.10.0" pymongo neo4j
+
+### Configuração
+
+Em cada arquivo de banco, preencha as credenciais:
+
+*supabase_db.py*
+python
+SUPABASE_URL = "https://<seu-projeto>.supabase.co"
+SUPABASE_KEY = "<sua-anon-key>"
+
+*mongo_db.py*
+python
+MONGO_URI = "mongodb+srv://<usuario>:<senha>@<cluster>.mongodb.net/"
+
+*neo4j_db.py*
+python
+NEO4J_URI = "neo4j+s://<id>.databases.neo4j.io"
+NEO4J_USER = "<usuario>"
+NEO4J_PASS = "<senha>"
+
+### Executar o backend
+
+bash
+cd PJBancos/backend
+uvicorn Main:app --reload
+
+O backend estará disponível em http://127.0.0.1:8000.
+A documentação interativa dos endpoints estará em http://127.0.0.1:8000/docs.
+
+### Executar o frontend
+
+Abra o arquivo PJBancos/frontend/index.html diretamente no navegador.
